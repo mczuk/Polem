@@ -87,7 +87,7 @@ Benchmark
 ---------
 
 ```
-docker run -it polem polem -p /build/polem/corpus/kpwr-1.1-fixed-keywords-test.txt
+docker run -it -v "$PWD/corpus:/build/polem/corpus:ro" polem polem -p /build/polem/corpus/kpwr-1.1-fixed-keywords-test.txt
 ```
 
 The `./corpus/` folder contains train and test sets. To evaluate the Polem lemmatization model on the gold standard data, run the following command:
