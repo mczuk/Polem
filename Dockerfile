@@ -11,8 +11,8 @@ RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install vim libboost-all-dev lib
 #### downloading prerequisities...
 RUN mkdir /build
 WORKDIR /build
-RUN git clone http://nlp.pwr.wroc.pl/corpus2.git
-RUN git clone http://nlp.pwr.edu.pl/wccl.git
+RUN git clone https://gitlab.clarin-pl.eu/analysers/corpus2.git
+RUN git clone https://gitlab.clarin-pl.eu/analysers/wccl.git
 RUN wget -O morfeusz2-2.0.0-Linux-amd64.deb https://nextcloud.clarin-pl.eu/index.php/s/VVIvx4w20azcWbp/download
 RUN dpkg -i morfeusz2-2.0.0-Linux-amd64.deb
 #### ... and building them

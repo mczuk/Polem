@@ -20,7 +20,7 @@ Before running the build system, you need to ensure you have the following libra
    ```
 * Corpus2
    ```bash
-   git clone http://nlp.pwr.wroc.pl/corpus2.git
+   git clone https://gitlab.clarin-pl.eu/analysers/corpus2.git
    cd corpus2
    mkdir bin
    cd bin
@@ -35,7 +35,7 @@ Before running the build system, you need to ensure you have the following libra
 * WCCL
   ```bash
   sudo apt-get install -y libantlr-dev
-  git clone http://nlp.pwr.edu.pl/wccl.git
+  git clone https://gitlab.clarin-pl.eu/analysers/wccl.git
   cd wccl
   mkdir bin
   cd bin
