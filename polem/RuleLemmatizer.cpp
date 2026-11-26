@@ -11,6 +11,7 @@
  */
 
 #include <unicode/unistr.h>
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -25,6 +26,56 @@
 
 using namespace std;
 using namespace pugi;
+
+namespace {
+
+/**
+ * Checks whether a Morfeusz tag covers the given simple tag. Recent SGJP dictionaries
+ * merge attribute values with dots, e.g. "adj:sg:nom.voc:f:pos" covers "adj:sg:nom:f:pos",
+ * and may add trailing qualifiers, e.g. "subst:sg:nom.acc.voc:n:ncol" covers "subst:sg:nom:n".
+ */
+bool morfeuszTagCovers(const string &morfeuszTag, const string &ctag) {
+    vector<string> morfeuszParts, ctagParts;
+    boost::split(morfeuszParts, morfeuszTag, boost::is_any_of(":"));
+    boost::split(ctagParts, ctag, boost::is_any_of(":"));
+    if (morfeuszParts.size() < ctagParts.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < ctagParts.size(); i++) {
+        vector<string> values;
+        boost::split(values, morfeuszParts[i], boost::is_any_of("."));
+        if (find(values.begin(), values.end(), ctagParts[i]) == values.end()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Generates forms of the base with the given tag. If no form has exactly this tag
+ * (the dictionary stores merged tags), all forms are generated and filtered.
+ */
+void generateForms(morfeusz::Morfeusz *generator, const string &base, const string &ctag,
+                   vector<morfeusz::MorphInterpretation> &res) {
+    try {
+        int ctagID = generator->getIdResolver().getTagId(ctag);
+        generator->generate(base, ctagID, res);
+        if (!res.empty()) {
+            return;
+        }
+    } catch (morfeusz::MorfeuszException &e) {
+        // The tag is not in the tagset, fall back to filtering.
+    }
+    vector<morfeusz::MorphInterpretation> all;
+    generator->generate(base, all);
+    for (auto &interp : all) {
+        if (morfeuszTagCovers(interp.getTag(*generator), ctag)) {
+            res.push_back(interp);
+        }
+    }
+}
+
+}
 
 
 /**
@@ -324,12 +375,10 @@ icu::UnicodeString RuleLemmatizer::generate(Corpus2::Sentence::Ptr sentence, std
         string ctag;
         string basestr;
         try {
-            int ctagID;
             base.findAndReplace(" ", "");
             base.toUTF8String(basestr);
             ctag = this->tagset.tag_to_string(tag);
-            ctagID = this->generator->getIdResolver().getTagId(ctag);
-            this->generator->generate(basestr, ctagID, res);
+            generateForms(this->generator, basestr, ctag, res);
         } catch (morfeusz::MorfeuszException &e) {
             return "";
         }
