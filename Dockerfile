@@ -11,17 +11,27 @@ RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install vim libboost-all-dev lib
 #### downloading prerequisities...
 RUN mkdir /build
 WORKDIR /build
+RUN git clone https://gitlab.clarin-pl.eu/analysers/pwrutils.git
 RUN git clone https://gitlab.clarin-pl.eu/analysers/corpus2.git
 RUN git clone https://gitlab.clarin-pl.eu/analysers/wccl.git
-RUN wget -O morfeusz2-2.0.0-Linux-amd64.deb https://nextcloud.clarin-pl.eu/index.php/s/VVIvx4w20azcWbp/download
-RUN dpkg -i morfeusz2-2.0.0-Linux-amd64.deb
+RUN wget -O morfeusz2.tar.gz https://download.sgjp.pl/morfeusz/20240107/Linux/18.04/64/morfeusz2-1.99.7.sgjp.20240107-Linux-amd64.tar.gz && \
+    tar -xzf morfeusz2.tar.gz --strip-components=1 -C /usr/local && \
+    rm morfeusz2.tar.gz && \
+    ldconfig
 #### ... and building them
 
-# corpus2
-RUN cd corpus2
-RUN mkdir bin
-WORKDIR /build/corpus2/bin
+# pwrutils
+RUN mkdir /build/pwrutils/bin
+WORKDIR /build/pwrutils/bin
 RUN cmake ..
+RUN make -j
+RUN make install
+RUN ldconfig
+
+# corpus2
+RUN mkdir /build/corpus2/bin
+WORKDIR /build/corpus2/bin
+RUN cmake ../src
 RUN make -j
 RUN make -j
 RUN make install
@@ -30,7 +40,10 @@ RUN ldconfig
 # wccl
 RUN mkdir /build/wccl/bin
 WORKDIR /build/wccl/bin
-RUN cmake ..
+# Skip wccl tests and SWIG wrappers: they do not compile with Ubuntu 18.04 Boost/ICU and Polem does not need them
+RUN sed -i '/add_subdirectory(tests)/d' ../src/CMakeLists.txt ../src/libmwereader/CMakeLists.txt && \
+    sed -i 's/set(WCCL_BUILD_SWIG True/set(WCCL_BUILD_SWIG False/' ../src/CMakeLists.txt
+RUN cmake ../src
 RUN make -j
 RUN make -j
 RUN make install
